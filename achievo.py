@@ -50,10 +50,12 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-@client.event # should be [.achievement, name, game]
+@client.event # should be [?achievement Larenthios Dark Souls III]
 async def on_message(message):
-    if message.content.startswith(triggerchar + 'achievement'):
-        osef, name, game = message.content.split()
+    if message.content.startswith(triggerchar + 'achievement '):
+        tab = message.content.split()
+        name = tab[1]
+        game = ' '.join(tab[2:])
         output = get_achievement_stat(name, game)
         logging.debug(output)
         await client.send_message(message.channel, output)
@@ -69,7 +71,7 @@ async def on_message(message):
 
 @client.event
 async def on_message(message):
-    if message.content.startswith(triggerchar + 'help'):
+    if message.content.startswith(triggerchar + 'help '):
         await client.send_message(message.channel, 'Je dispose de 20.000 Dataris.')
 
 client.run(token)
