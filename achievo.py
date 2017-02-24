@@ -1,8 +1,12 @@
+#! /usr/bin/env python3
 import configparser
 import requests
 import discord
 import asyncio
 import json
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 client = discord.Client()
 triggerchar = '?'
@@ -51,6 +55,7 @@ async def on_message(message):
     if message.content.startswith(triggerchar + 'achievement'):
         osef, name, game = message.content.split()
         output = get_achievement_stat(name, game)
+        logging.debug(output)
         await client.send_message(message.channel, output)
 
 # @client.event
