@@ -49,7 +49,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.content.startswith(triggerchar + 'ach'):
+    if message.content.startswith(triggerchar + '?achievement'):
         tab = message.content.split()
         name = tab[1]
         game = ' '.join(tab[2:])
