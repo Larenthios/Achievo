@@ -4,9 +4,6 @@ import requests
 import discord
 import asyncio
 import json
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
 
 client = discord.Client()
 triggerchar = '?'
@@ -25,7 +22,7 @@ def get_game_id(name):
     parsed_aal = json.loads(all_app_list.text)
     game_tab = parsed_aal['applist']['apps']
     for game in game_tab:
-        if game['name'].lower() == game_name.lower():
+        if game['name'].lower() == name.lower():
             return (game['appid'])
 
 def get_achievement_stat(name, game):
@@ -50,28 +47,21 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-@client.event # should be [?achievement Larenthios Dark Souls III]
+@client.event
 async def on_message(message):
-    if message.content.startswith(triggerchar + 'achievement '):
+    if message.content.startswith(triggerchar + 'ach'):
         tab = message.content.split()
         name = tab[1]
         game = ' '.join(tab[2:])
         output = get_achievement_stat(name, game)
-        logging.debug(output)
         await client.send_message(message.channel, output)
-
-# @client.event
-# async def on_message(message):
-#     if message.content.startswith(triggerchar + 'kikimeter'):
-#         osef, name1, name2, game = message.content.split() # should be [.achievement, name1, name2, game]
-#         name = get_player_id(name)
-#         game = "374320"#get_game_id(game)
-#         r = requests.get("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=" + game + "&key=" + steam_apikey + "&steamid=" + name)
-#         await client.send_message(message.channel, r.body)
-
-@client.event
-async def on_message(message):
-    if message.content.startswith(triggerchar + 'help '):
-        await client.send_message(message.channel, 'Je dispose de 20.000 Dataris.')
+    elif message.content.startswith(triggerchar + 'help'):
+        await client.send_message(message.channel, "Bonjour à toi")
+#   elif message.content.startswith(triggerchar + 'kikimeter'):
+#       osef, name1, name2, game = message.content.split() # should be [.achievement, name1, name2, game]
+#       name = get_player_id(name)
+#       game = "374320"#get_game_id(game)
+#       r = requests.get("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=" + game + "&key=" + steam_apikey + "&steamid=" + name)
+#       await client.send_message(message.channel, r.body)
 
 client.run(token)
