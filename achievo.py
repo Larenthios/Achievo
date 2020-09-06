@@ -2,16 +2,18 @@
 import configparser
 import requests
 import discord
+from discord.ext import commands
 import asyncio
 import json
 
 # colors = [0xe81717, 0xf9bd07, 0x6cf367, 0x159DC1]
-client = discord.Client()
-triggerchar = '?'
 config = configparser.ConfigParser()
 config.read('config.ini')
 steam_apikey = config['keys']['steam']
 token = config['keys']['discord']
+triggerchar='?'
+
+bot = commands.Bot(command_prefix='?', description='Jean Plancher dans les pieds')
 
 def get_player_id(name):
     steam_steamid = requests.get("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steam_apikey + "&vanityurl=" + name)
@@ -23,7 +25,7 @@ def get_game_id(name):
     parsed_aal = json.loads(all_app_list.text)
     game_tab = parsed_aal['applist']['apps']
     for game in game_tab:
-        if game['name'].lower() == name.lower():
+        if game['name'].lower().encode("ascii", "ignore").decode() == name.lower():
             return (game['appid'])
 
 def get_achievement_stat(name, game):
@@ -31,6 +33,8 @@ def get_achievement_stat(name, game):
     total = 0
     r = requests.get("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=" + str(get_game_id(game)) + "&key=" + steam_apikey + "&steamid=" + str(get_player_id(name)))
     r = json.loads(r.text)
+    print(r)
+    print(r['playerstats'])
     gname = r['playerstats']['gameName']
     r = r['playerstats']['achievements']
     for d in r:
@@ -41,48 +45,47 @@ def get_achievement_stat(name, game):
 
 #Asynchronous tasks
 
-@client.event
+@bot.event
 async def on_ready():
     print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
+    print(bot.user.name)
+    print(bot.user.id)
     print('------')
 
-@client.event
-async def on_message(message):
-    if message.content.startswith(triggerchar + 'achievement'):
-        tab = message.content.split()
-        name = tab[1]
-        game = ' '.join(tab[2:])
-        stat = get_achievement_stat(name, game)
-        em = discord.Embed(title=stat[1], color=0x159DC1)
-        em.set_author(name=stat[0], icon_url=client.user.avatar_url)
-        await client.send_message(message.channel, embed=em)
-    elif message.content == (triggerchar + 'help'):
-        await client.send_message(message.channel, "Commands: ?achievement steam_name steam_game")
-    elif message.content == 'alors':
-        await client.send_message(message.channel, ',')
-    elif message.content.startswith(triggerchar + 'lmgtfy'):
-        await client.send_message(message.channel, '<http://lmgtfy.com/?q=' + message.content.split()[1] + '>')
-    elif message.content == 'mmmh' or message.content == '🤔' or message.content == 'émoticône penseur':
-        await client.add_reaction(message, '🤔')
-    elif message.content.startswith(triggerchar + 'kikimeter'):
-        tab = message.content.split() # should be [.achievement, name1, name2, game]
-        game = ' '.join(tab[3:])
-        stat1 = get_achievement_stat(tab[1], game)
-        stat2 = get_achievement_stat(tab[2], game)
-        em = discord.Embed(title="Achievements for " + game, color=0x159DC1)
-        em.add_field(name=tab[1], value=stat1[1], inline=True)
-        em.add_field(name=tab[2], value=stat2[1], inline=True)
-        n1 = stat1[1].split('/')[0]
-        n2 = stat2[1].split('/')[0]
-        if n1 == n2:
-            s = "You both have the same number of achievements"
-        elif n1 > n2:
-            s = tab[1]
-        else:
-            s = tab[2]
-        em.add_field(name=s, value="a winner is you", inline=False)
-        await client.send_message(message.channel, embed=em)
+@bot.command(name='newcmd', pass_context='true')
+async def testcmd(ctx):
+    await ctx.channel.send("c bn")
 
-client.run(token)
+@bot.command(name='achievement', pass_context='true')
+async def achievement(ctx, name, game):
+    stat = get_achievement_stat(name, game)
+    em = discord.Embed(title=stat[1], color=0x159DC1)
+    em.set_author(name=stat[0], icon_url=bot.user.avatar_url)
+    await ctx.channel.send(embed=em)
+
+@bot.command(name='lmgtfy', pass_context='true')
+async def lmgtfy(ctx, link):
+    await ctx.channel.send('<http://lmgtfy.com/?q=' + link + '>')
+
+@bot.command(name='ac_compare', pass_context='true')
+async def ac_compare(ctx, name1, name2, game):
+    await ctx.channel.send("processing...")
+    stat1 = get_achievement_stat(name1, game)
+    await ctx.channel.send("Done fetching first gamer's stats")
+    stat2 = get_achievement_stat(name2, game)
+    await ctx.channel.send("Done fetching second gamer's stats")
+    em = discord.Embed(title="Achievements for " + game, color=0x159DC1)
+    em.add_field(name=name1, value=stat1[1], inline=True)
+    em.add_field(name=name2, value=stat2[1], inline=True)
+    n1 = stat1[1].split('/')[0]
+    n2 = stat2[1].split('/')[0]
+    if n1 == n2:
+        s = "You both have the same number of achievements"
+    elif n1 > n2:
+        s = tab[1]
+    else:
+        s = tab[2]
+    em.add_field(name=s, value="a winner is you", inline=False)
+    await ctx.channel.send(embed=em)
+
+bot.run(token)
